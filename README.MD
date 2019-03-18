@@ -35,11 +35,11 @@ Generates a report with information about Nuix batch loads.  Report includes:
 - Chat-conversation Items 
 - Chat-message Items
 
-**Note:** To calculate elapsed time for a batch load, the script locates the corresponding history event in the case (which records a start and a stop time).  The time when a batch load completes loading and the stop time of the history event can slightly differ (so the don't always match exactly).  To address this, the script matches a batch load to its corresponding history event by finding the two with the smallest difference in time.
+**Note:** To calculate elapsed time for a batch load, the script locates the corresponding history event in the case (which records a start and a stop time).  The time when a batch load completes loading and the stop time of the history event can slightly differ (so they don't always match exactly).  To address this, the script matches a batch load to its corresponding history event by finding the two with the smallest difference in time between [BatchLoadDetails.getLoaded](https://download.nuix.com/releases/desktop/stable/docs/en/scripting/api/nuix/BatchLoadDetails.html#getLoaded--) and [HistoryEvent.getEndDate](https://download.nuix.com/releases/desktop/stable/docs/en/scripting/api/nuix/HistoryEvent.html#getEndDate--).
 
-In testing this approach works quite well.  The only instance I can think this may incorrectly match up the two is if multiple batch loads completed in a very small and similar span of time.  This is unlikely to be the case, with the only potential instance that I can think of this occurring being if a compound case contains multiple simple cases that contain batch loads that were processed concurrently.
+In my testing this approach looks to work quite well.  The only instance I can think this may incorrectly match up the two is if multiple batch loads completed in a very small and similar span of time.  This is unlikely to be the case, with the only potential instance that I can think of this occurring being if a compound case contains multiple simple cases that contain batch loads that were processed concurrently.
 
-**TL;DR;** There is a potential for for the wrong elapsed time to be reported for a given batch load, although I believe the likelyhood of this is rather low.
+**TL;DR** There is a potential for for the wrong elapsed time to be reported for a given batch load, although I believe the likelihood of this is rather low.
 
 # Getting Started
 
