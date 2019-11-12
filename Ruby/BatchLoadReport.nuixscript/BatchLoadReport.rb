@@ -73,6 +73,8 @@ if dialog.getDialogResult == true
 				"Batch Load Start",
 				"Batch Load Finish",
 				"Batch Load Elapsed",
+				"User Short Name",
+				"User Long Name",
 				"Items",
 			]
 			headers += kinds.map{|kind| "#{kind.capitalize} Items"}
@@ -88,12 +90,15 @@ if dialog.getDialogResult == true
 				end_date = corresponding_history_event.getEndDate.withZone(time_zone)
 				elapsed_seconds = (end_date.getMillis - start_date.getMillis) / 1000
 				batch_load_evidence_items = batch_load_helper.find_affected_evidence_items(batch_load)
+				user = corresponding_history_event.getUser
 
 				row_values = [
 					batch_load_evidence_items.map{|ei| ei.getLocalisedName}.join("; "),
 					start_date.toString(date_format),
 					end_date.toString(date_format),
 					TimeSpanFormatter.seconds_to_elapsed(elapsed_seconds),
+					user.getShortName,
+					user.getLongName,
 					$current_case.count("batch-load-guid:\"#{batch_load_guid}\""),
 				]
 
