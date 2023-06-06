@@ -31,6 +31,11 @@ dialog = TabbedCustomDialog.new("Batch Load Report")
 main_tab = dialog.addTab("main_tab","Main")
 main_tab.appendSaveFileChooser("report_csv","Report CSV","Comma Separated Values (*.csv)","csv")
 main_tab.appendTextField("date_format","Date Format","YYYY/MM/dd hh:mm:ss aa")
+main_tab.appendCheckBox("include_additional_settings","Include 'Additional Settings'",false)
+main_tab.appendCheckBox("include_case_evidence_settings","Include 'Case Evidence Settings'",false)
+main_tab.appendCheckBox("include_data_processing_settings","Include 'Data Processing Settings'",false)
+main_tab.appendCheckBox("include_data_settings","Include 'Data Settings'",false)
+main_tab.appendCheckBox("include_parallel_processing_settings","Include 'Parallel Processing Settings'",false)
 main_tab.appendChoiceTable("reported_batch_loads","Reported Batch Loads",batch_load_choices)
 
 dialog.validateBeforeClosing do |values|
@@ -65,10 +70,17 @@ if dialog.getDialogResult == true
 	time_zone = org.joda.time.DateTimeZone.getDefault
 	kinds = $utilities.getItemTypeUtility.getAllKinds.map{|kind| kind.getName}
 
+	include_additional_settings = values["include_additional_settings"]
+	include_case_evidence_settings = values["include_case_evidence_settings"]
+	include_data_processing_settings = values["include_data_processing_settings"]
+	include_data_settings = values["include_data_settings"]
+	include_parallel_processing_settings = values["include_parallel_processing_settings"]
+
 	ProgressDialog.forBlock do |pd|
 		CSV.open(report_csv,"w:utf-8") do |csv|
 			# Write headers row
 			headers = [
+				"Batch Load GUID",
 				"Relevant Evidence",
 				"Batch Load Start",
 				"Batch Load Finish",
@@ -77,7 +89,45 @@ if dialog.getDialogResult == true
 				"User Long Name",
 				"Items",
 			]
+
 			headers += kinds.map{|kind| "#{kind.capitalize} Items"}
+
+			# Addtional headers based upon what other '* Settings' groups are selected and the keys present in each
+			# groups' map.
+
+			additional_settings_keys = []
+			case_evidence_settings_keys = []
+			data_processing_settings_keys = []
+			data_settings_keys = []
+			parallel_processing_settings_keys = []
+
+			sampled_batch = reported_batch_loads.first
+
+			if include_additional_settings
+				additional_settings_keys = sampled_batch.getAdditionalSettings.keys
+				headers += additional_settings_keys.map{|key|"AdditionalSettings.#{key}"}
+			end
+
+			if include_case_evidence_settings
+				case_evidence_settings_keys = sampled_batch.getCaseEvidenceSettings.keys
+				headers += case_evidence_settings_keys.map{|key|"CaseEvidenceSettings.#{key}"}
+			end
+			
+			if include_data_processing_settings
+				data_processing_settings_keys = sampled_batch.getDataProcessingSettings.keys
+				headers += data_processing_settings_keys.map{|key|"DataProcessingSettings.#{key}"}
+			end
+
+			if include_data_settings
+				data_settings_keys = sampled_batch.getDataSettings.keys
+				headers += data_settings_keys.map{|key|"DataSettings.#{key}"}
+			end
+
+			if include_parallel_processing_settings
+				parallel_processing_settings_keys = sampled_batch.getParallelProcessingSettings.keys
+				headers += parallel_processing_settings_keys.map{|key|"ParallelProcessingSettings.#{key}"}
+			end
+			
 			csv << headers			
 
 			reported_batch_loads.each_with_index do |batch_load,batch_load_index|
@@ -93,6 +143,7 @@ if dialog.getDialogResult == true
 				user = corresponding_history_event.getUser
 
 				row_values = [
+					batch_load_guid,
 					batch_load_evidence_items.map{|ei| ei.getLocalisedName}.join("; "),
 					start_date.toString(date_format),
 					end_date.toString(date_format),
@@ -104,6 +155,30 @@ if dialog.getDialogResult == true
 
 				# By kind break down
 				row_values += kinds.map{|kind| $current_case.count("batch-load-guid:\"#{batch_load_guid}\" AND kind:#{kind}") }
+
+				# data_processing_settings_keys = []
+				# data_settings_keys = []
+				# parallel_processing_settings_keys = []
+
+				if include_additional_settings
+					row_values += additional_settings_keys.map{|key|batch_load.getAdditionalSettings[key]}
+				end
+
+				if include_case_evidence_settings
+					row_values += case_evidence_settings_keys.map{|key|batch_load.getCaseEvidenceSettings[key]}
+				end
+
+				if include_data_processing_settings
+					row_values += data_processing_settings_keys.map{|key|batch_load.getDataProcessingSettings[key]}
+				end
+
+				if include_data_settings
+					row_values += data_settings_keys.map{|key|batch_load.getDataSettings[key]}
+				end
+
+				if include_parallel_processing_settings
+					row_values += parallel_processing_settings_keys.map{|key|batch_load.getParallelProcessingSettings[key]}
+				end
 
 				csv << row_values
 			end
